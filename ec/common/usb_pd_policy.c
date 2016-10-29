@@ -187,14 +187,14 @@ int pd_build_request(int cnt, uint32_t *src_caps, uint32_t *rdo,
 {
 	int pdo_index, flags = 0;
 	int uw;
-
+	
 	if (req_type == PD_REQUEST_VSAFE5V)
 		/* src cap 0 should be vSafe5V */
 		pdo_index = 0;
 	else
 		/* find pdo index for max voltage we can request */
 		pdo_index = pd_find_pdo_index(cnt, src_caps, max_request_mv);
-
+	
 	/* If could not find desired pdo_index, then return error */
 	if (pdo_index == -1)
 		return -EC_ERROR_UNKNOWN;

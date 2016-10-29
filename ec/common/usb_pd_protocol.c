@@ -42,7 +42,7 @@ void pd_test_rx_set_preamble(int port, int has_preamble);
  * Note that higher log level causes timing changes and thus may affect
  * performance.
  */
-static int debug_level;
+static int debug_level = 1; // Shruthi
 
 /*
  * PD communication enabled flag. When false, PD state machine still
@@ -413,10 +413,13 @@ static int send_source_cap(int port)
 	else
 		header = PD_HEADER(PD_DATA_SOURCE_CAP, pd[port].power_role,
 			pd[port].data_role, pd[port].msg_id, src_pdo_cnt);
+	
+	//CPRINTF("port = %d, header = %d, src_pdo[0] = %d\n", port, header, src_pdo[0]);
+	//CPRINTF("src_pdo[1] = %d, src_pdo[2] = %d\n", src_pdo[1], src_pdo[2]);
 
 	bit_len = pd_transmit(port, TCPC_TX_SOP, header, src_pdo);
-	if (debug_level >= 1)
-		CPRINTF("srcCAP>%d\n", bit_len);
+	//if (debug_level >= 1)
+	//	CPRINTF("srcCAP> %d, port %d\n", bit_len, port);
 
 	return bit_len;
 }
@@ -710,6 +713,7 @@ static void handle_data_request(int port, uint16_t head,
 	switch (type) {
 #ifdef CONFIG_USB_PD_DUAL_ROLE
 	case PD_DATA_SOURCE_CAP:
+		//CPRINTF("Shruthi: In PD_DATA_SOURCE_CAP port %d\n", port);
 		if ((pd[port].task_state == PD_STATE_SNK_DISCOVERY)
 			|| (pd[port].task_state == PD_STATE_SNK_TRANSITION)
 #ifdef CONFIG_USB_PD_VBUS_DETECT_NONE
@@ -732,6 +736,7 @@ static void handle_data_request(int port, uint16_t head,
 		break;
 #endif /* CONFIG_USB_PD_DUAL_ROLE */
 	case PD_DATA_REQUEST:
+		//CPRINTF("Shruthi: In PD_DATA_REQUEST port %d\n", port);
 		if ((pd[port].power_role == PD_ROLE_SOURCE) && (cnt == 1))
 			if (!pd_check_requested_voltage(payload[0])) {
 				if (send_control(port, PD_CTRL_ACCEPT) < 0)
@@ -1027,7 +1032,7 @@ static void handle_request(int port, uint16_t head,
 {
 	int cnt = PD_HEADER_CNT(head);
 	int p;
-
+	
 	/* dump received packet content (only dump ping at debug level 2) */
 	if ((debug_level == 1 && PD_HEADER_TYPE(head) != PD_CTRL_PING) ||
 	    debug_level >= 2) {
@@ -1036,14 +1041,14 @@ static void handle_request(int port, uint16_t head,
 			CPRINTF("[%d]%08x ", p, payload[p]);
 		CPRINTF("\n");
 	}
-
+	
 	/*
 	 * If we are in disconnected state, we shouldn't get a request. Do
 	 * a hard reset if we get one.
 	 */
 	if (!pd_is_connected(port))
 		set_state(port, PD_STATE_HARD_RESET_SEND);
-
+	
 	if (cnt)
 		handle_data_request(port, head, payload);
 	else
@@ -1521,6 +1526,10 @@ void pd_task(void)
 		/* process any potential incoming message */
 		incoming_packet = evt & PD_EVENT_RX;
 		if (incoming_packet) {
+			if(port == 1){
+				gpio_set_level(GPIO_LED_R, 1);
+				//CPRINTF("Shruthi: Incoming message received! = port %d\n", port);
+			}
 			tcpm_get_message(port, payload, &head);
 			if (head > 0)
 				handle_request(port, head, payload);
@@ -1613,6 +1622,7 @@ void pd_task(void)
 			}
 
 			/* Debounce complete */
+			new_cc_state = PD_CC_UFP_ATTACHED; // Shruthi
 			/* UFP is attached */
 			if (new_cc_state == PD_CC_UFP_ATTACHED) {
 				pd[port].polarity = (cc2 == TYPEC_CC_VOLT_RD);
@@ -1755,7 +1765,7 @@ void pd_task(void)
 						    PD_STATE_HARD_RESET_SEND :
 						    PD_STATE_SRC_DISCONNECTED);
 			}
-				
+			
 			/* Send source cap some minimum number of times */
 			if (caps_count < PD_CAPS_COUNT) {
 				/* Query capabilites of the other side */
@@ -1777,6 +1787,7 @@ void pd_task(void)
 			}
 			break;
 		case PD_STATE_SRC_NEGOCIATE:
+			//CPRINTF("Shruthi: PD_STATE_SRC_NEGOCIATE = port %d\n", port);
 			/* wait for a "Request" message */
 			if (pd[port].last_state != pd[port].task_state)
 				set_state_timeout(port,
@@ -2052,12 +2063,6 @@ void pd_task(void)
 
 			timeout = 20*MSEC;
 			
-			#if 1
-			task_wake(PD_PORT_TO_TASK_ID(0));
-			task_wait_event(2 * PD_T_CC_DEBOUNCE + 100 * MSEC);
-			ASSERT(pd[port].polarity == 0);
-			#endif
-
 			/* Wait for CC debounce and VBUS present */
 			if (get_time().val < pd[port].cc_debounce ||
 			    !pd_is_vbus_present(port))
@@ -2171,6 +2176,7 @@ void pd_task(void)
 #endif
 			break;
 		case PD_STATE_SNK_DISCOVERY:
+			//CPRINTF("Shruthi: PD_STATE_SNK_DISCOVERY = port %d\n", port);
 			/* Wait for source cap expired only if we are enabled */
 			if ((pd[port].last_state != pd[port].task_state)
 			    && pd_comm_enabled) {
@@ -2245,6 +2251,7 @@ void pd_task(void)
 #endif
 			break;
 		case PD_STATE_SNK_REQUESTED:
+			//CPRINTF("Shruthi: PD_STATE_SNK_REQUESTED = port %d\n", port);
 			/* Wait for ACCEPT or REJECT */
 			if (pd[port].last_state != pd[port].task_state) {
 				hard_reset_count = 0;

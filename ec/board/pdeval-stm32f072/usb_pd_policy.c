@@ -54,16 +54,20 @@ void pd_transition_voltage(int idx)
 	/* No-operation: we are always 5V */
 	switch (idx - 1) {
 		case PDO_IDX_20V:
+			CPRINTF("Shruthi: In PDO_IDX_20V\n");
 			//gpio_set_level(GPIO_PP20000_EN, 1);
 			//gpio_set_level(GPIO_PPVAR_VBUS_EN, 0);
 			break;
 		case PDO_IDX_12V:
+			CPRINTF("Shruthi: In PDO_IDX_12V\n");
 			//gpio_set_level(GPIO_PP12000_EN, 1);
 			//gpio_set_level(GPIO_PP20000_EN, 0);
 			//gpio_set_level(GPIO_PPVAR_VBUS_EN, 1);
 			break;
 		case PDO_IDX_5V:
+			CPRINTF("Shruthi: In PDO_IDX_5V\n");
 		default:
+			CPRINTF("Shruthi: In PDO_IDX_5V\n");
 			//gpio_set_level(GPIO_PP12000_EN, 0);
 			//gpio_set_level(GPIO_PP20000_EN, 0);
 			//gpio_set_level(GPIO_PPVAR_VBUS_EN, 1);

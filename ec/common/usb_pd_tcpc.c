@@ -350,7 +350,7 @@ static int send_hard_reset(int port)
 	pd_rx_enable_monitoring(port);
 	return 0;
 }
-
+#if 0
 static int send_validate_message(int port, uint16_t header,
 				 const uint32_t *data)
 {
@@ -429,7 +429,7 @@ static int send_validate_message(int port, uint16_t header,
 		CPRINTF("TX NOACK%d %04x/%d\n", port, header, cnt);
 	return PD_TX_ERR_GOODCRC;
 }
-
+#endif
 static void send_goodcrc(int port, int id)
 {
 	uint16_t header = PD_HEADER(PD_CTRL_GOOD_CRC, pd[port].power_role,
@@ -759,10 +759,11 @@ static void alert(int port, int mask)
 int tcpc_run(int port, int evt)
 {
 	int cc, i, res;
-
+	int prev_port; // Shruthi
+	pd[port].rx_enabled = 1; // Shruthi
+	
 	/* incoming packet ? */
 	if (pd_rx_started(port) && pd[port].rx_enabled) {
-		gpio_set_level(GPIO_TEST_GPIO1, 1);
 		/* Get message and place at RX buffer head */
 		res = pd[port].rx_head[pd[port].rx_buf_head] =
 			pd_analyze_rx(port,
@@ -789,9 +790,33 @@ int tcpc_run(int port, int evt)
 	if ((evt & PD_EVENT_TX) && pd[port].rx_enabled) {
 		switch (pd[port].tx_type) {
 		case TCPC_TX_SOP:
+			#if 0
 			res = send_validate_message(port,
 					pd[port].tx_head,
 					pd[port].tx_data);
+				
+			//if(pd[port].tx_head == 12641)
+			//if(pd[port].tx_data[0] == 570527844 && pd[port].tx_data[1] == 570671404 && pd[port].tx_data[2] == 570527844)
+			//	gpio_set_level(GPIO_TEST_GPIO2, 1);
+			#endif
+				
+			#if 1
+			prev_port = port;
+			if(port == 0)
+				port = 1;
+			else if(port == 1)
+				port = 0;
+			pd[port].rx_head[pd[port].rx_buf_head] = pd[prev_port].tx_head;
+			pd[port].rx_payload[pd[port].rx_buf_head][0]  = pd[prev_port].tx_data[0];
+			pd[port].rx_payload[pd[port].rx_buf_head][1]  = pd[prev_port].tx_data[1];
+			pd[port].rx_payload[pd[port].rx_buf_head][2]  = pd[prev_port].tx_data[2];
+			rx_buf_increment(port, &pd[port].rx_buf_head);
+			handle_request(port, res);
+			alert(port, TCPC_REG_ALERT_RX_STATUS);
+				
+			if(pd[port].rx_head[pd[port].rx_buf_head] == 12641)
+				gpio_set_level(GPIO_TEST_GPIO2, 1);
+			#endif
 			break;
 		case TCPC_TX_BIST_MODE_2:
 			bist_mode_2_tx(port);
