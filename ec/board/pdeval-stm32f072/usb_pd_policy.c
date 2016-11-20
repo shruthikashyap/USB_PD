@@ -22,7 +22,7 @@
 
 /* Used to fake VBUS presence since no GPIO is available to read VBUS */
 static int vbus_present;
-//static int vbus_present = 1;
+//static int vbus_present = 1; // Shruthi
 
 enum volt_idx {
 	PDO_IDX_5V  = 0,
@@ -51,6 +51,8 @@ int pd_is_valid_input_voltage(int mv)
 
 void pd_transition_voltage(int idx)
 {
+	int ex_data = idx - 1;
+
 	/* No-operation: we are always 5V */
 	switch (idx - 1) {
 		case PDO_IDX_20V:
@@ -73,6 +75,13 @@ void pd_transition_voltage(int idx)
 			//gpio_set_level(GPIO_PPVAR_VBUS_EN, 1);
 			break;
 	}
+	
+	// Send I2C message to C2000 with voltage as data // Shruthi TBD
+	// Change I2C address as required!
+	if(i2c_write32(0, 0x9c, 0xAB, ex_data) != EC_SUCCESS)
+		CPRINTS("Error sending I2C data to C2000\n");
+	else
+		CPRINTS("Success sending I2C data to C2000\n");
 }
 
 int pd_set_power_supply_ready(int port)
@@ -186,6 +195,15 @@ DECLARE_CONSOLE_COMMAND(test, command_i2c_test,
 
 void test_shr_task(void)
 {
+	// Shruthi: Enable VBUS 10s after bootup
+	sleep(10);
+	vbus_present = 1;
+	
+	// Shruthi: Send a test VDM to port 0 20s after bootup
+	sleep(20);
+	pd_send_vdm(0, USB_VID_GOOGLE, VDO_CMD_PRICE_TEST, NULL, 0);
+	ccprintf("\nSHRUTHI: VDM sent\n");
+	
 	/*	int ex_data = 25;
 		int ret = -1;
 
@@ -250,7 +268,7 @@ int pd_custom_vdm(int port, int cnt, uint32_t *payload,
 	int cmd = PD_VDO_CMD(payload[0]);
 	uint16_t dev_id = 0;
 	int is_rw;
-
+	
 	/* make sure we have some payload */
 	if (cnt == 0)
 		return 0;
@@ -278,6 +296,9 @@ int pd_custom_vdm(int port, int cnt, uint32_t *payload,
 				pd_dev_store_rw_hash(port, dev_id, payload + 1,
 						SYSTEM_IMAGE_UNKNOWN);
 			}
+			break;
+		case VDO_CMD_PRICE_TEST: // Shruthi
+			CPRINTF("Shruthi: VDM PRICE TEST\n");
 			break;
 	}
 

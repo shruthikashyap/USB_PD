@@ -43,6 +43,7 @@ void pd_test_rx_set_preamble(int port, int has_preamble);
  * performance.
  */
 static int debug_level = 1; // Shruthi
+int count = 0; // Shruthi
 
 /*
  * PD communication enabled flag. When false, PD state machine still
@@ -494,7 +495,7 @@ static void handle_vdm_request(int port, int cnt, uint32_t *payload)
 			pd[port].vdm_state = VDM_STATE_DONE;
 		}
 	}
-
+	
 	if (PD_VDO_SVDM(payload[0]))
 		rlen = pd_svdm(port, cnt, payload, &rdata);
 	else
@@ -2176,6 +2177,21 @@ void pd_task(void)
 #endif
 			break;
 		case PD_STATE_SNK_DISCOVERY:
+			// Shruthi
+			if(port == 0 && pd_is_vbus_present(port) && count == 2)
+			{
+				//CPRINTF("In Shruthi if\n");
+				pd[port].power_role = PD_ROLE_SOURCE;
+				tcpm_set_cc(port, TYPEC_CC_RP);
+				set_state(port, PD_STATE_SRC_DISCONNECTED);
+				task_wake(PD_PORT_TO_TASK_ID(port));
+				
+				count = 0;
+			}
+			else if (port == 0)
+				count++;
+			// Shruthi
+
 			//CPRINTF("Shruthi: PD_STATE_SNK_DISCOVERY = port %d\n", port);
 			/* Wait for source cap expired only if we are enabled */
 			if ((pd[port].last_state != pd[port].task_state)
@@ -2875,7 +2891,7 @@ static int command_pd(int argc, char **argv)
 {
 	int port;
 	char *e;
-
+	
 	if (argc < 2)
 		return EC_ERROR_PARAM_COUNT;
 
