@@ -759,11 +759,8 @@ static void alert(int port, int mask)
 int tcpc_run(int port, int evt)
 {
 	int cc, i, res;
-
-	#if USB_PD_SIMULATION
 	int prev_port; // Shruthi
 	pd[port].rx_enabled = 1; // Shruthi
-	#endif
 	
 	/* incoming packet ? */
 	if (pd_rx_started(port) && pd[port].rx_enabled) {
@@ -793,7 +790,17 @@ int tcpc_run(int port, int evt)
 	if ((evt & PD_EVENT_TX) && pd[port].rx_enabled) {
 		switch (pd[port].tx_type) {
 		case TCPC_TX_SOP:
-			#if USB_PD_SIMULATION
+			#if 0
+			res = send_validate_message(port,
+					pd[port].tx_head,
+					pd[port].tx_data);
+				
+			//if(pd[port].tx_head == 12641)
+			//if(pd[port].tx_data[0] == 570527844 && pd[port].tx_data[1] == 570671404 && pd[port].tx_data[2] == 570527844)
+			//	gpio_set_level(GPIO_TEST_GPIO2, 1);
+			#endif
+				
+			#if 1
 			prev_port = port;
 			if(port == 0)
 				port = 1;
@@ -809,17 +816,7 @@ int tcpc_run(int port, int evt)
 				
 			if(pd[port].rx_head[pd[port].rx_buf_head] == 12641)
 				gpio_set_level(GPIO_TEST_GPIO2, 1);
-			
-			#else
-			res = send_validate_message(port,
-					pd[port].tx_head,
-					pd[port].tx_data);
-				
-			//if(pd[port].tx_head == 12641)
-			//if(pd[port].tx_data[0] == 570527844 && pd[port].tx_data[1] == 570671404 && pd[port].tx_data[2] == 570527844)
-			//	gpio_set_level(GPIO_TEST_GPIO2, 1);
 			#endif
-
 			break;
 		case TCPC_TX_BIST_MODE_2:
 			bist_mode_2_tx(port);
