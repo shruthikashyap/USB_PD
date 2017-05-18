@@ -54,6 +54,7 @@ void pd_transition_voltage(int idx)
 	int ex_data = idx - 1;
 
 	/* No-operation: we are always 5V */
+	// Notify C2000 either by setting certain GPIO or by sending I2C message
 	switch (idx - 1) {
 		case PDO_IDX_20V:
 			CPRINTF("Shruthi: In PDO_IDX_20V\n");
@@ -195,13 +196,15 @@ DECLARE_CONSOLE_COMMAND(test, command_i2c_test,
 
 void test_shr_task(void)
 {
+	uint32_t data[5] = {1,2,3,4,5};
+	
 	// Shruthi: Enable VBUS 10s after bootup
 	sleep(10);
 	vbus_present = 1;
 	
 	// Shruthi: Send a test VDM to port 0 20s after bootup
 	sleep(20);
-	pd_send_vdm(0, USB_VID_GOOGLE, VDO_CMD_PRICE_TEST, NULL, 0);
+	pd_send_vdm(0, USB_VID_GOOGLE, VDO_CMD_PRICE_TEST, data, sizeof(data));
 	ccprintf("\nSHRUTHI: VDM sent\n");
 	
 	/*	int ex_data = 25;
@@ -268,6 +271,8 @@ int pd_custom_vdm(int port, int cnt, uint32_t *payload,
 	int cmd = PD_VDO_CMD(payload[0]);
 	uint16_t dev_id = 0;
 	int is_rw;
+
+	int i; // Shruthi
 	
 	/* make sure we have some payload */
 	if (cnt == 0)
@@ -299,6 +304,10 @@ int pd_custom_vdm(int port, int cnt, uint32_t *payload,
 			break;
 		case VDO_CMD_PRICE_TEST: // Shruthi
 			CPRINTF("Shruthi: VDM PRICE TEST\n");
+			for(i = 0; i < cnt; i++)
+			{
+				CPRINTF("VDM Price %d = %d", i+1, payload[i]);
+			}
 			break;
 	}
 

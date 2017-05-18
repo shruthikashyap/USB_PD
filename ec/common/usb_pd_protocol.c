@@ -1623,7 +1623,10 @@ void pd_task(void)
 			}
 
 			/* Debounce complete */
+			#if USB_PD_SIMULATION
 			new_cc_state = PD_CC_UFP_ATTACHED; // Shruthi
+			#endif
+			
 			/* UFP is attached */
 			if (new_cc_state == PD_CC_UFP_ATTACHED) {
 				pd[port].polarity = (cc2 == TYPEC_CC_VOLT_RD);
@@ -2177,6 +2180,7 @@ void pd_task(void)
 #endif
 			break;
 		case PD_STATE_SNK_DISCOVERY:
+			#if USB_PD_SIMULATION
 			// Shruthi
 			if(port == 0 && pd_is_vbus_present(port) && count == 2)
 			{
@@ -2191,6 +2195,7 @@ void pd_task(void)
 			else if (port == 0)
 				count++;
 			// Shruthi
+			#endif
 
 			//CPRINTF("Shruthi: PD_STATE_SNK_DISCOVERY = port %d\n", port);
 			/* Wait for source cap expired only if we are enabled */

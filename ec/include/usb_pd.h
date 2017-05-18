@@ -257,6 +257,9 @@ struct pd_policy {
 	int amode_idx;
 };
 
+// Shruthi - Enable (1)/Disbale(0) Simulation
+#define USB_PD_SIMULATION	1
+
 /*
  * VDO : Vendor Defined Message Object
  * VDM object is minimum of VDM header + 6 additional data objects.
