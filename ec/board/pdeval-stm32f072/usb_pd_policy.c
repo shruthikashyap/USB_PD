@@ -54,6 +54,7 @@ void pd_transition_voltage(int idx)
 	int ex_data = idx - 1;
 
 	/* No-operation: we are always 5V */
+	// Notify C2000 either by setting certain GPIO or by sending I2C message
 	switch (idx - 1) {
 		case PDO_IDX_20V:
 			CPRINTF("Shruthi: In PDO_IDX_20V\n");
